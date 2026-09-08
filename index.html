@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- Macht die Seite zur "App": nach "Zum Home-Bildschirm hinzufügen" startet sie
+     beim Öffnen über das Home-Bildschirm-Symbol ohne Safari-Oberfläche (keine
+     Adressleiste, keine Tableiste) im echten Vollbild. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Baum-Berater">
+<title>Weihnachtsbaum-Berater · Kiosk-Prototyp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --kraft: #EAE2CB;
+    --kraft-tief: #DED2AF;
+    --tanne: #1E4B2C;
+    --tanne-dunkel: #123320;
+    --oliv: #8C9B3E;
+    --oliv-dunkel: #6E7C2E;
+    --weiss: #FFFFFF;
+    --rinde: #6B5A3E;
+    --rost: #A6482F;
+    --linie: rgba(30,75,44,0.18);
+    --schatten: rgba(20,15,5,0.4);
+    --radius: 6px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Work Sans', sans-serif;
+    background: #2A281F;
+    display:flex;
+    justify-content:center;
+    padding: 28px 12px;
+    color: var(--tanne);
+  }
+  .kiosk{
+    width: 430px;
+    max-width:100%;
+    height: 800px;
+    background: var(--kraft);
+    border-radius: 22px;
+    border: 10px solid #1A1712;
+    box-shadow: 0 30px 60px var(--schatten), inset 0 0 0 1px rgba(255,255,255,0.4);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .kiosk::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity:0.05;
+    mix-blend-mode:multiply;
+    pointer-events:none;
+    z-index:0;
+  }
+  /* ---- Echtes Vollbild, sobald die Seite als Home-Bildschirm-App läuft ----
+     "display-mode: standalone" greift nur, wenn die Seite über "Zum
+     Home-Bildschirm hinzufügen" installiert und von dort gestartet wurde.
+     In normaler Safari-Ansicht bleibt die Geräte-Mockup-Optik (dunkler
+     Rahmen, abgerundete Ecken) für die Vorschau am Rechner erhalten. */
+  @media (display-mode: standalone){
+    body{ padding:0; background: var(--kraft); }
+    .kiosk{
+      width:100vw;
+      height:100dvh;
+      max-width:none;
+      border:none;
+      border-radius:0;
+      box-shadow:none;
+    }
+    .statusbar{
+      padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
+    }
+    .screen{
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 26px);
+    }
+  }
+  .statusbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 14px 22px 10px;
+    font-size: 12px;
+    letter-spacing:0.04em;
+    color: rgba(30,75,44,0.55);
+    flex-shrink:0;
+    position:relative; z-index:1;
+  }
+  .screen{
+    flex:1;
+    display:none;
+    flex-direction:column;
+    padding: 6px 26px 26px;
+    overflow-y:auto;
+    position:relative; z-index:1;
+  }
+  .screen.active{display:flex;}
+  .screen::-webkit-scrollbar{width:0;}
+
+  /* ---- Startbildschirm ---- */
+  #screen-start{justify-content:space-between; text-align:center; padding-top:14px; position:relative;}
+  .start-top{margin-top: 14px; position:relative;}
+  .doodle{ position:absolute; opacity:0.16; }
+  .baum-icon{
+    width:74px; height:88px; margin: 0 auto 20px;
+    display:block;
+  }
+  .marke-sticker{ position:relative; display:inline-block; margin-bottom:22px; }
+  .bar{
+    display:block;
+    font-family:'Poppins', sans-serif;
+    font-weight:800;
+    font-size:13px;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    padding:5px 14px;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+  }
+  .bar-oliv{ background:var(--oliv); color:var(--weiss); transform:rotate(-1.5deg); position:relative; z-index:2; }
+  .bar-weiss{ background:var(--weiss); color:var(--tanne); transform:rotate(1deg) translateY(-4px); position:relative; z-index:1; }
+  h1.titel{
+    font-family:'Poppins', sans-serif;
+    font-weight:700;
+    font-size: 32px;
+    line-height:1.18;
+    margin: 0 0 14px;
+    color: var(--tanne);
+  }
+  .unterzeile{
+    font-size:15px;
+    line-height:1.5;
+    color: var(--rinde);
+    max-width: 300px;
+    margin: 0 auto;
+  }
+  .start-buttons{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-top: 26px;
+  }
+  .btn-primary, .btn-secondary{
+    border:none;
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    font-family:'Work Sans', sans-serif;
+    font-size: 17px;
+    font-weight:600;
+    cursor:pointer;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+    transition: transform .12s ease;
+  }
+  .btn-primary{
+    background: var(--tanne);
+    color: var(--weiss);
+  }
+  .btn-secondary{
+    background: var(--weiss);
+    color: var(--tanne);
+    border: 1.5px solid var(--tanne);
+  }
+  .btn-primary:active, .btn-secondary:active{ transform: scale(0.98); }
+  .btn-sub{
+    display:block;
+    font-weight:400;
+    font-size:13px;
+    margin-top:3px;
+    opacity:0.75;
+  }
+  .arrow{ font-size:20px; flex-shrink:0; }
+
+  .footer-hinweis{
+    font-size:12px;
+    color: var(--rinde);
+    opacity:0.8;
+    margin-top: 22px;
+  }
+
+  /* ---- gemeinsame Kopfzeile ---- */
+  .kopf{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    padding: 6px 0 18px;
+    flex-shrink:0;
+  }
+  .zurueck{
+    width:38px; height:38px;
+    border-radius:50%;
+    border:1.5px solid var(--tanne);
+    background: var(--weiss);
+    color: var(--tanne);
+    font-size:18px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .kopf-titel{
+    font-family:'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight:700;
+    color: var(--tanne);
+  }
+  .schritte{
+    display:flex;
+    gap:6px;
+    margin: 0 0 22px;
+  }
+  .schritt-punkt{
+    flex:1;
+    height:4px;
+    border-radius:2px;
+    background: var(--linie);
+  }
+  .schritt-punkt.done{ background: var(--oliv); }
+
+  .frage{
+    font-family:'Poppins', sans-serif;
+    font-size: 22px;
+    font-weight:700;
+    line-height:1.3;
+    margin: 4px 0 22px;
+    color: var(--tanne);
+  }
+  .frage-klein{
+    font-family:'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight:700;
+    color: var(--tanne);
+    margin: 0 0 10px;
+  }
+  .frage-gruppe{ margin-bottom: 22px; }
+  .frage-gruppe .optionen{ gap: 8px; }
+  .frage-gruppe .option{ padding: 12px 16px; }
+  .optionen{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .option{
+    border: 1.5px solid var(--linie);
+    background: var(--weiss);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    text-align:left;
+    color: var(--tanne);
+    font-family:'Work Sans', sans-serif;
+  }
+  .option .haupt{ font-size:16px; font-weight:700; }
+  .option .neben{ font-size:13px; color: var(--rinde); margin-top:2px; }
+  .option:active{ background: rgba(140,155,62,0.12); border-color: var(--oliv); }
+  .option.gewaehlt{ background: rgba(140,155,62,0.14); border-color: var(--oliv); }
+
+  .weiter-leiste{
+    margin-top:auto;
+    padding-top:18px;
+  }
+  .btn-weiter{
+    width:100%;
+    background: var(--tanne);
+    color: var(--weiss);
+    border:none;
+    border-radius: var(--radius);
+    padding:17px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    opacity:0.35;
+    pointer-events:none;
+    transition: opacity .15s ease;
+  }
+  .btn-weiter.aktiv{ opacity:1; pointer-events:all; }
+
+  /* ---- FAQ ---- */
+  .faq-item{
+    border-bottom: 1.5px solid var(--linie);
+    padding: 15px 2px;
+  }
+  .faq-frage{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:700;
+    color: var(--tanne);
+  }
+  .faq-plus{ font-size:20px; color: var(--oliv-dunkel); flex-shrink:0; margin-left:12px; transition: transform .2s ease;}
+  .faq-item.offen .faq-plus{ transform: rotate(45deg); }
+  .faq-antwort{
+    max-height:0;
+    overflow:hidden;
+    transition: max-height .25s ease;
+    font-size:14px;
+    line-height:1.55;
+    color: var(--rinde);
+  }
+  .faq-item.offen .faq-antwort{ max-height:220px; margin-top:10px; }
+
+  /* ---- Ergebnis ---- */
+  .modell-karte{
+    border:1.5px solid var(--linie);
+    background: var(--weiss);
+    border-radius: var(--radius);
+    padding:16px;
+    margin-bottom:12px;
+    display:flex;
+    gap:14px;
+  }
+  .modell-karte.empfehlung{ border-color: var(--oliv); background: rgba(140,155,62,0.09); }
+  .modell-bild{
+    width:52px; height:64px;
+    flex-shrink:0;
+  }
+  .modell-name{ font-weight:700; font-size:15px; color:var(--tanne); }
+  .modell-tag{
+    display:inline-block;
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    background: var(--oliv);
+    color: var(--weiss);
+    padding:3px 9px;
+    border-radius:3px;
+    font-weight:700;
+    margin-bottom:6px;
+    transform: rotate(-1deg);
+  }
+  .modell-detail{ font-size:13px; color: var(--rinde); line-height:1.5; }
+  .modell-preis{ font-family:'Poppins', sans-serif; font-size:15px; font-weight:700; color: var(--tanne); margin-top:6px; }
+
+  .bedarf-box{
+    background: var(--weiss);
+    border:1.5px solid var(--linie);
+    border-radius: var(--radius);
+    padding:18px;
+    margin: 6px 0 18px;
+  }
+  .bedarf-zeile{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--linie);
+  }
+  .bedarf-zeile:last-child{ border-bottom:none; }
+  .bedarf-label{ font-size:14px; color: var(--rinde); }
+  .bedarf-wert{ font-family:'Poppins', sans-serif; font-size:18px; font-weight:700; color: var(--tanne); }
+
+  .abschluss-btn{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    border:1.5px solid var(--linie);
+    background: var(--weiss);
+    color:var(--tanne);
+    border-radius: var(--radius);
+    padding:15px 16px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    margin-bottom:10px;
+    text-align:left;
+  }
+  .abschluss-btn.hervorgehoben{
+    background: var(--tanne);
+    color: var(--weiss);
+    border-color: var(--tanne);
+  }
+
+  /* ---- QR / Mitarbeiter Bestätigung ---- */
+  .bestaetigung{
+    text-align:center;
+    margin-top: 60px;
+  }
+  .bestaetigung .icon-kreis{
+    width:76px; height:76px;
+    border-radius:50%;
+    background: rgba(140,155,62,0.16);
+    border:1.5px solid var(--oliv);
+    display:flex; align-items:center; justify-content:center;
+    margin: 0 auto 20px;
+    font-size:32px;
+  }
+  .bestaetigung h2{
+    font-family:'Poppins', sans-serif;
+    font-size:21px;
+    font-weight:700;
+    margin: 0 0 8px;
+    color: var(--tanne);
+  }
+  .bestaetigung p{
+    font-size:14px;
+    color: var(--rinde);
+    max-width:260px;
+    margin: 0 auto;
+    line-height:1.5;
+  }
+
+  /* ---- Warum Brockmeyer? ---- */
+  .warum-intro{
+    font-size:14px;
+    line-height:1.55;
+    color: var(--rinde);
+    margin: 0 0 20px;
+  }
+  .vergleich-kopf{
+    display:grid;
+    grid-template-columns: 1.1fr 1fr 1fr;
+    gap:8px;
+    padding: 0 2px 8px;
+  }
+  .vergleich-kopf span{
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    color: var(--rinde);
+  }
+  .vergleich-kopf span.spalte-bro{ color: var(--tanne); }
+  .vergleich-zeile{
+    display:grid;
+    grid-template-columns: 1.1fr 1fr 1fr;
+    gap:8px;
+    align-items:center;
+    background: var(--weiss);
+    border:1.5px solid var(--linie);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    margin-bottom:8px;
+  }
+  .vergleich-zeile .merkmal{ font-size:13px; font-weight:700; color: var(--tanne); }
+  .vergleich-zeile .discounter{ font-size:12px; color: var(--rost); line-height:1.35; }
+  .vergleich-zeile .brockmeyer{ font-size:12px; color: var(--oliv-dunkel); font-weight:600; line-height:1.35; }
+  .vergleich-icon{ display:inline-block; margin-right:3px; }
+  .marken-hinweis{
+    background: rgba(140,155,62,0.1);
+    border:1.5px solid var(--oliv);
+    border-radius: var(--radius);
+    padding:14px 16px;
+    font-size:13px;
+    line-height:1.5;
+    color: var(--rinde);
+    margin: 16px 0 4px;
+  }
+  .licht-titel{
+    font-family:'Poppins', sans-serif;
+    font-size:16px;
+    font-weight:700;
+    color: var(--tanne);
+    margin: 4px 0 10px;
+  }
+  .licht-alternativen{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:10px;
+  }
+  .licht-alt-zeile{
+    background: var(--weiss);
+    border:1.5px solid var(--linie);
+    border-radius: var(--radius);
+    padding:10px 14px;
+    font-size:12.5px;
+    line-height:1.45;
+    color: var(--rinde);
+  }
+  .licht-alt-zeile strong{ color: var(--tanne); }
+  .option-klein{ padding:10px 14px; }
+  .option-klein .haupt{ font-size:14px; }
+  .option-bild{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .option-bild svg{
+    width:32px; height:32px;
+    flex-shrink:0;
+  }
+  .licht-ergebnis-inhalt{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+  }
+  .licht-ergebnis-inhalt svg{
+    width:44px; height:44px;
+    flex-shrink:0;
+  }
+  .warum-link{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    background:none;
+    border:none;
+    color: var(--tanne);
+    font-family:'Work Sans', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    cursor:pointer;
+    margin-top:16px;
+    padding:4px;
+  }
+
+  /* ---- Wartungs-PIN-Overlay ---- */
+  .wartung-overlay{
+    display:none;
+    position:absolute;
+    inset:0;
+    background: rgba(18,51,32,0.92);
+    z-index:50;
+    align-items:center;
+    justify-content:center;
+  }
+  .wartung-overlay.aktiv{ display:flex; }
+  .wartung-karte{
+    background: var(--kraft);
+    border-radius: 14px;
+    padding: 28px 26px;
+    width: 82%;
+    max-width: 300px;
+    text-align:center;
+  }
+  .wartung-titel{
+    font-family:'Poppins', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    color: var(--tanne);
+    margin-bottom:18px;
+  }
+  .wartung-punkte{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .wartung-punkte span{
+    width:14px; height:14px;
+    border-radius:50%;
+    border:1.5px solid var(--tanne);
+    display:inline-block;
+  }
+  .wartung-punkte span.gefuellt{ background: var(--tanne); }
+  .wartung-tasten{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .wartung-taste{
+    background: var(--weiss);
+    border:1.5px solid var(--linie);
+    border-radius: 8px;
+    padding:14px 0;
+    font-family:'Poppins', sans-serif;
+    font-size:17px;
+    font-weight:700;
+    color: var(--tanne);
+    cursor:pointer;
+  }
+  .wartung-taste:active{ background: rgba(140,155,62,0.16); }
+  .wartung-abbrechen{
+    background:none;
+    border:none;
+    color: var(--rinde);
+    font-size:13px;
+    text-decoration:underline;
+    cursor:pointer;
+    padding:4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="kiosk">
+  <div class="statusbar">
+    <span id="wartungs-trigger">Gartencenter Weihnachtsmarkt</span>
+    <span id="uhrzeit">--:--</span>
+  </div>
+
+  <!-- START -->
+  <div class="screen active" id="screen-start">
+    <div class="start-top">
+      <svg class="doodle" style="top:-4px; right:6px; width:46px; height:46px;" viewBox="0 0 48 48" fill="none">
+        <path d="M24 4 V44 M8 12 L40 36 M40 12 L8 36" stroke="#1E4B2C" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <svg class="doodle" style="bottom:110px; left:2px; width:40px; height:40px;" viewBox="0 0 48 48" fill="none">
+        <path d="M10 34 L10 14 L18 14 L18 8 L30 8 L30 14 L38 14 L38 34 Z M10 22 H38 M20 22 V34 M28 22 V34" stroke="#1E4B2C" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <svg class="baum-icon" viewBox="0 0 80 96" fill="none">
+        <path d="M40 6 L54 34 H46 L60 58 H50 L64 84 H16 L30 58 H20 L34 34 H26 Z" stroke="#1E4B2C" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        <rect x="37" y="84" width="6" height="7" rx="1" stroke="#1E4B2C" stroke-width="3"/>
+        <circle cx="40" cy="6" r="3.5" fill="#1E4B2C"/>
+        <circle cx="30" cy="46" r="3" fill="#8C9B3E"/>
+        <circle cx="50" cy="68" r="3" fill="#8C9B3E"/>
+      </svg>
+      <div class="marke-sticker">
+        <span class="bar bar-oliv">Gartencenter Brockmeyer</span>
+        <span class="bar bar-weiss">Weihnachtswelt</span>
+      </div>
+      <h1 class="titel">Der richtige Baum<br>für euer Zuhause</h1>
+      <p class="unterzeile">In drei Fragen zum passenden Modell – inklusive Licht- und Schmuckmenge.</p>
+    </div>
+
+    <div>
+      <div class="start-buttons">
+        <button class="btn-primary" onclick="zeige('screen-s1')">
+          <span>Baum-Berater starten<span class="btn-sub">Größe, Modell, Empfehlung</span></span>
+          <span class="arrow">→</span>
+        </button>
+        <button class="btn-secondary" onclick="zeige('screen-faq')">
+          <span>Häufige Fragen<span class="btn-sub">PE, PVC, Lagerung & mehr</span></span>
+          <span class="arrow">→</span>
+        </button>
+      </div>
+      <button class="warum-link" onclick="zeige('screen-warum')">Warum ein Premium-Baum von Brockmeyer? →</button>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="screen" id="screen-faq">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-start')">←</button>
+      <div class="kopf-titel">Häufige Fragen</div>
+    </div>
+    <div id="faq-liste"></div>
+  </div>
+
+  <!-- WARUM BROCKMEYER -->
+  <div class="screen" id="screen-warum">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-start')">←</button>
+      <div class="kopf-titel">Warum Brockmeyer?</div>
+    </div>
+    <p class="warum-intro">Ein günstiger Baum aus dem Baumarkt oder Internet sieht auf dem Foto oft ähnlich aus wie unsere Modelle – der Unterschied zeigt sich erst nach ein paar Weihnachten.</p>
+
+    <div class="vergleich-kopf">
+      <span>Merkmal</span>
+      <span>Discounter</span>
+      <span class="spalte-bro">Brockmeyer</span>
+    </div>
+
+    <div class="vergleich-zeile">
+      <div class="merkmal">Nadeln</div>
+      <div class="discounter">dünne PVC-Fäden, wirken schnell künstlich</div>
+      <div class="brockmeyer">PVC/PE-Mix, Real Needle – täuschend echt</div>
+    </div>
+
+    <div class="vergleich-zeile">
+      <div class="merkmal">Garantie</div>
+      <div class="discounter">meist 1–2 Jahre, oft nur Kulanz</div>
+      <div class="brockmeyer">12 Jahre Herstellergarantie (Kaemingk)</div>
+    </div>
+
+    <div class="vergleich-zeile">
+      <div class="merkmal">Nach Jahren</div>
+      <div class="discounter">Äste hängen durch, franst aus</div>
+      <div class="brockmeyer">Klappsystem, jedes Jahr wieder wie neu</div>
+    </div>
+
+    <div class="vergleich-zeile">
+      <div class="merkmal">Brandschutz</div>
+      <div class="discounter">oft ungeprüfte Ware</div>
+      <div class="brockmeyer">schwer entflammbar, geprüft</div>
+    </div>
+
+    <div class="vergleich-zeile">
+      <div class="merkmal">Verstauen</div>
+      <div class="discounter">sperrig, Äste verbiegen</div>
+      <div class="brockmeyer">kompakt klappbar, stabiler Metallfuß</div>
+    </div>
+
+    <div class="marken-hinweis">Unsere Bäume – Grandis Fir, Allison Pine, Frosted Killington Fir, Snowy Alba Fir, Galloway Spruce und Kenmore Fir – stammen von Kaemingk/Everlands, seit über 70 Jahren auf Weihnachtsdeko spezialisiert und in mehr als 30 Ländern zuhause. Die Garantie gilt direkt beim Hersteller, nicht nur bei uns im Center.<br><br><strong>Wichtig:</strong> Die vollen 12 Jahre gibt es nur, wenn der Baum innerhalb von 2 Monaten nach dem Kauf auf everlands-trees.com registriert wird. Ohne Registrierung gelten nur die gesetzlichen 2 Jahre. Wir erinnern jeden Kunden aktiv daran – z. B. mit dem QR-Code auf dem Kassenbon.</div>
+
+    <div class="weiter-leiste">
+      <button class="btn-weiter aktiv" onclick="zeige('screen-s1')">Jetzt Baum-Berater starten</button>
+    </div>
+  </div>
+
+  <!-- SCHRITT 1: GRÖSSE -->
+  <div class="screen" id="screen-s1">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-start')">←</button>
+      <div class="kopf-titel">Baum-Berater</div>
+    </div>
+    <div class="schritte">
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt"></div>
+      <div class="schritt-punkt"></div>
+      <div class="schritt-punkt"></div>
+      <div class="schritt-punkt"></div>
+    </div>
+    <div class="frage">Welche Baumgröße darf's sein?</div>
+    <div class="optionen" id="optionen-groesse"></div>
+    <div class="weiter-leiste">
+      <button class="btn-weiter" id="weiter-s1" onclick="zeige('screen-s1b')">Weiter</button>
+    </div>
+  </div>
+
+  <!-- SCHRITT 1B: BESCHNEIT ODER NICHT -->
+  <div class="screen" id="screen-s1b">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-s1')">←</button>
+      <div class="kopf-titel">Baum-Berater</div>
+    </div>
+    <div class="schritte">
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt"></div>
+      <div class="schritt-punkt"></div>
+      <div class="schritt-punkt"></div>
+    </div>
+    <div class="frage">Grün, oder mit Schnee-Optik?</div>
+    <div class="optionen" id="optionen-beschneit"></div>
+    <div class="weiter-leiste">
+      <button class="btn-weiter" id="weiter-s1b" onclick="zeige('screen-s1c')">Weiter</button>
+    </div>
+  </div>
+
+  <!-- SCHRITT 1C: PRAXIS-KRITERIEN -->
+  <div class="screen" id="screen-s1c">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-s1b')">←</button>
+      <div class="kopf-titel">Baum-Berater</div>
+    </div>
+    <div class="schritte">
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt"></div>
+      <div class="schritt-punkt"></div>
+    </div>
+    <div class="frage-gruppe">
+      <div class="frage-klein">Schlanke Form oder voller Baum?</div>
+      <div class="optionen" id="optionen-schlank"></div>
+    </div>
+    <div class="frage-gruppe">
+      <div class="frage-klein">Nadelqualität</div>
+      <div class="optionen" id="optionen-nadel"></div>
+    </div>
+    <div class="weiter-leiste">
+      <button class="btn-weiter" id="weiter-s1c" onclick="renderOptikOptionen(); zeige('screen-s2')">Weiter</button>
+    </div>
+  </div>
+
+  <!-- SCHRITT 2: MODELLWAHL -->
+  <div class="screen" id="screen-s2">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-s1c')">←</button>
+      <div class="kopf-titel">Baum-Berater</div>
+    </div>
+    <div class="schritte">
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt"></div>
+    </div>
+    <div class="frage">Welches Modell passt zu eurem Wohnzimmer?</div>
+    <div class="optionen" id="optionen-optik"></div>
+    <div class="weiter-leiste">
+      <button class="btn-weiter" id="weiter-s2" onclick="zeigeErgebnis()">Empfehlung anzeigen</button>
+    </div>
+  </div>
+
+  <!-- ERGEBNIS -->
+  <div class="screen" id="screen-ergebnis">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-s2')">←</button>
+      <div class="kopf-titel">Eure Empfehlung</div>
+    </div>
+    <div class="schritte">
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+      <div class="schritt-punkt done"></div>
+    </div>
+    <div id="modelle-liste"></div>
+
+    <div class="bedarf-box">
+      <div class="bedarf-zeile">
+        <span class="bedarf-label">Lichterkette empfohlen</span>
+        <span class="bedarf-wert" id="bedarf-lichter">–</span>
+      </div>
+      <div class="bedarf-zeile">
+        <span class="bedarf-label">Christbaumkugeln (Ø 6–8 cm)</span>
+        <span class="bedarf-wert" id="bedarf-kugeln">–</span>
+      </div>
+    </div>
+
+    <div id="licht-empfehlung"></div>
+
+    <button class="abschluss-btn" onclick="zurueckZurStart()">↺ Neue Beratung starten</button>
+  </div>
+
+  <!-- WARTUNG: verstecktes PIN-Overlay, nur über 5x Tippen auf die Statuszeile erreichbar -->
+  <div class="wartung-overlay" id="wartung-overlay">
+    <div class="wartung-karte">
+      <div class="wartung-titel">Seite neu laden</div>
+      <div class="wartung-punkte" id="wartung-punkte">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="wartung-tasten" id="wartung-tasten"></div>
+      <button class="wartung-abbrechen" onclick="wartungSchliessen()">Abbrechen</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Uhrzeit
+function updateUhr(){
+  const jetzt = new Date();
+  document.getElementById('uhrzeit').textContent =
+    jetzt.getHours().toString().padStart(2,'0') + ':' + jetzt.getMinutes().toString().padStart(2,'0');
+}
+updateUhr();
+setInterval(updateUhr, 15000);
+
+// ---- Auf Startseite zurücksetzen (für den nächsten Kunden) ----
+// Setzt alle bisherigen Auswahlen zurück und entfernt hervorgehobene
+// Optionen, damit der nächste Kunde eine komplett frische Beratung sieht.
+function zurueckZurStart(){
+  auswahl.groesse = null;
+  auswahl.beschneit = null;
+  auswahl.schlank = null;
+  auswahl.nadelPremium = null;
+  auswahl.optik = null;
+  document.querySelectorAll('.option.gewaehlt').forEach(o => o.classList.remove('gewaehlt'));
+  document.querySelectorAll('.btn-weiter.aktiv').forEach(b => {
+    if(b.id !== 'weiter-s1b') b.classList.remove('aktiv'); // weiter-s1b wird beim Rendern neu geprüft
+  });
+  document.getElementById('weiter-s1').classList.remove('aktiv');
+  document.getElementById('weiter-s1b').classList.remove('aktiv');
+  document.getElementById('weiter-s1c').classList.remove('aktiv');
+  document.getElementById('weiter-s2').classList.remove('aktiv');
+  zeige('screen-start');
+}
+
+// ---- 30-Sekunden-Inaktivitäts-Timer ----
+// Macht ohne Eingabe keinen Unterschied auf der Startseite selbst, springt
+// aber von jedem anderen Bildschirm automatisch zurück, sobald 30 Sekunden
+// lang niemand den Kiosk berührt hat – damit er für den nächsten Kunden bereit ist.
+const INAKTIV_MS = 30000;
+let inaktivTimer;
+function inaktivTimerZuruecksetzen(){
+  clearTimeout(inaktivTimer);
+  inaktivTimer = setTimeout(() => {
+    const aktivDiv = document.querySelector('.screen.active');
+    if(aktivDiv && aktivDiv.id !== 'screen-start'){
+      zurueckZurStart();
+    }
+  }, INAKTIV_MS);
+}
+['click', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, inaktivTimerZuruecksetzen));
+inaktivTimerZuruecksetzen();
+
+// ---- Versteckter Wartungszugang: Seite frisch vom Server laden ----
+// 5x auf die Statuszeile tippen (innerhalb von 3 Sekunden) öffnet einen
+// PIN-Dialog. Für Kunden unsichtbar, für Mitarbeiter leicht zu merken.
+let wartungTapCount = 0;
+let wartungTapTimer;
+let wartungEingabe = '';
+
+document.getElementById('wartungs-trigger').addEventListener('click', () => {
+  wartungTapCount++;
+  clearTimeout(wartungTapTimer);
+  wartungTapTimer = setTimeout(() => { wartungTapCount = 0; }, 3000);
+  if(wartungTapCount >= 5){
+    wartungTapCount = 0;
+    wartungOeffnen();
+  }
+});
+
+function wartungOeffnen(){
+  wartungEingabe = '';
+  wartungPunkteAktualisieren();
+  const tasten = document.getElementById('wartung-tasten');
+  tasten.innerHTML = '';
+  ['1','2','3','4','5','6','7','8','9','⌫','0','OK'].forEach(t => {
+    const btn = document.createElement('div');
+    btn.className = 'wartung-taste';
+    btn.textContent = t;
+    btn.onclick = () => wartungTaste(t);
+    tasten.appendChild(btn);
+  });
+  document.getElementById('wartung-overlay').classList.add('aktiv');
+}
+
+function wartungSchliessen(){
+  document.getElementById('wartung-overlay').classList.remove('aktiv');
+}
+
+function wartungPunkteAktualisieren(){
+  const punkte = document.querySelectorAll('#wartung-punkte span');
+  punkte.forEach((p, i) => p.classList.toggle('gefuellt', i < wartungEingabe.length));
+}
+
+function wartungTaste(t){
+  if(t === '⌫'){
+    wartungEingabe = wartungEingabe.slice(0, -1);
+    wartungPunkteAktualisieren();
+    return;
+  }
+  if(t === 'OK'){
+    if(wartungEingabe === KONFIGURATION.wartung.pin){
+      // Harter Neuladen unter Umgehung des Browser-Caches, holt den
+      // aktuellen Stand direkt vom Server.
+      window.location.href = window.location.pathname + '?frisch=' + Date.now();
+    } else {
+      wartungEingabe = '';
+      wartungPunkteAktualisieren();
+    }
+    return;
+  }
+  if(wartungEingabe.length < 4){
+    wartungEingabe += t;
+    wartungPunkteAktualisieren();
+    if(wartungEingabe.length === 4){
+      if(wartungEingabe === KONFIGURATION.wartung.pin){
+        window.location.href = window.location.pathname + '?frisch=' + Date.now();
+      } else {
+        setTimeout(() => { wartungEingabe = ''; wartungPunkteAktualisieren(); }, 400);
+      }
+    }
+  }
+}
+
+// ---- Automatisches Neuladen nach dem Einschalten ----
+// Wird das iPad abends ausgeschaltet und morgens wieder gestartet, soll der
+// Kiosk sich einmalig frisch vom Server holen, statt eine alte, im Browser
+// zwischengespeicherte Version weiter anzuzeigen. Kurze Bildschirmsperren
+// tagsüber lösen das bewusst NICHT aus.
+const AUFWACH_SCHWELLE_MINUTEN = 60;
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden'){
+    localStorage.setItem('kiosk_verborgen_seit', Date.now().toString());
+  } else if(document.visibilityState === 'visible'){
+    const seit = parseInt(localStorage.getItem('kiosk_verborgen_seit') || '0', 10);
+    const minutenWeg = seit ? (Date.now() - seit) / 60000 : 0;
+    if(seit && minutenWeg > AUFWACH_SCHWELLE_MINUTEN){
+      window.location.href = window.location.pathname + '?frisch=' + Date.now();
+    }
+  }
+});
+
+function zeige(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// =====================================================================
+// KONFIGURATION – hier kommen morgen die echten Zahlen rein.
+// Alles, was mit "// TODO" markiert ist, muss noch befüllt werden.
+// Struktur bewusst so gehalten, dass nur Werte ergänzt werden müssen,
+// ohne dass Code an anderer Stelle angefasst werden muss.
+// =====================================================================
+const KONFIGURATION = {
+
+  // ---- Baummodelle ----
+  // Werte laut Kaemingk/Everlands-Herstellerangaben (Verpackung + Hersteller-
+  // Datenblätter); Preise noch offen (siehe // TODO).
+  modelle: {
+    grandis: {
+      name: "Grandis Fir",
+      tag: "Premium · sehr dicht",
+      material: "PVC- & PE-Nadeln (Mix), Real Needle Look",
+      beschneit: false,
+      schlank: false,
+      nadelPremium: true,   // Flaggschiff-Linie, hoher Anteil Real-Needle-PE (genauer Zweigspitzen-Mix nicht online dokumentiert)
+      varianten: {
+        180: {zweige: null, durchmesser: "132 cm", preis: null},   // TODO: Zweige, Preis
+        210: {zweige: null, durchmesser: "150 cm", preis: null},   // TODO: Zweige, Preis
+        240: {zweige: null, durchmesser: "162 cm", preis: null},   // TODO: Zweige, Preis
+      }
+    },
+    allison: {
+      name: "Allison Pine",
+      tag: "Natürlich · Kiefer-Mix",
+      material: "PVC- & PE-Nadeln (Mix), Real Needle Look",
+      beschneit: false,
+      schlank: false,
+      nadelPremium: true,   // bestätigt: 675 PE / 559 PVC Spitzen bei 180cm = ca. 55% PE
+      varianten: {
+        150: {zweige: null, durchmesser: "97 cm", preis: null},    // TODO: Zweige, Preis
+        180: {zweige: 38, durchmesser: "112 cm", preis: null},     // TODO: Preis
+        210: {zweige: 54, durchmesser: "127 cm", preis: null},     // TODO: Preis
+      }
+    },
+    killington: {
+      name: "Frosted Killington Fir",
+      tag: "Schlank · beschneit",
+      material: "PE- & PVC-Nadeln (Mix), Real & Soft Needle, Frost-Optik",
+      beschneit: true,
+      schlank: true,        // Hersteller beschreibt Killington Fir explizit als "slim profile"
+      nadelPremium: false,  // bestätigt: 385 PE / 753 PVC Spitzen bei 210cm = ca. 34% PE, PVC-lastiger Mix
+      varianten: {
+        150: {zweige: null, durchmesser: "83 cm", preis: null},    // TODO: Zweige, Preis
+        180: {zweige: null, durchmesser: "93 cm", preis: null},    // TODO: Zweige, Preis
+        210: {zweige: 52, durchmesser: "103 cm", preis: null},     // TODO: Preis
+        240: {zweige: null, durchmesser: "113 cm", preis: null},   // TODO: Zweige, Preis
+      }
+    },
+    alba: {
+      name: "Snowy Alba Fir",
+      tag: "Beschneit · voll",
+      material: "PE- & PVC-Nadeln (Mix), Real Needle Look, Schnee-Optik",
+      beschneit: true,
+      schlank: false,
+      nadelPremium: true,   // bestätigt: ca. 1125 PE / 820 PVC Spitzen bei 210cm = ca. 58% PE
+      varianten: {
+        150: {zweige: null, durchmesser: "102 cm", preis: null},   // TODO: Zweige, Preis
+        180: {zweige: null, durchmesser: "116 cm", preis: null},   // TODO: Zweige, Preis
+        210: {zweige: 56, durchmesser: "127 cm", preis: null},     // TODO: Preis
+      }
+    },
+    galloway: {
+      name: "Galloway Spruce",
+      tag: "Schlank · Fichten-Optik",
+      material: "Real Needle Look, klassische Fichtenform",
+      beschneit: false,
+      schlank: true,         // Hersteller beschreibt Galloway Spruce als "etwas schlanker als die meisten"
+      nadelPremium: false,   // laut Rückmeldung gibt es "schlank + Premium" im Sortiment nicht
+      varianten: {
+        150: {zweige: null, durchmesser: "106 cm", preis: null},   // TODO: Zweige, Preis (Durchmesser laut Foto teils unscharf – bitte prüfen)
+        180: {zweige: null, durchmesser: "120 cm", preis: null},   // TODO: Zweige, Preis
+        210: {zweige: null, durchmesser: "130 cm", preis: null},   // TODO: Zweige, Preis
+        240: {zweige: null, durchmesser: "150 cm", preis: null},   // TODO: Zweige, Preis
+      }
+    },
+    kenmore: {
+      name: "Kenmore Fir",
+      tag: "Voll · preisgünstiger Einstieg",
+      material: "Real Needle Look (PE/PVC-Anteil nicht im Detail dokumentiert)",
+      beschneit: false,
+      schlank: false,        // voller Baum, laut Wunsch als Einstiegsmodell für "voll + preisgünstig" ergänzt
+      nadelPremium: false,
+      varianten: {
+        150: {zweige: 24, durchmesser: "81 cm", preis: null},      // TODO: Preis
+        180: {zweige: 38, durchmesser: "96 cm", preis: null},      // TODO: Preis
+        210: {zweige: 52, durchmesser: "120 cm", preis: null},     // TODO: Preis
+      }
+    }
+  },
+
+  // ---- Zubehör ----
+  zubehoer: {
+    // "Compact" ist laut Aussage der Bestseller und wird nach Baumhöhe passend
+    // empfohlen. Cluster / Silberdraht / Kerzenoptik sind Stil-Alternativen,
+    // die nicht strikt an eine Baumhöhe gebunden sind.
+    lichterketten: {
+      compact: {
+        name: "Lumineo Compact",
+        bestseller: true,
+        hinweis: "dicht bestückt, gleichmäßiges Licht – unsere meistverkaufte Kette",
+        kabel: "grün",
+        farbe: "warmweiß",
+        varianten: {
+          150: {led: 350, laenge: "7,5 m", preis: null},   // TODO: Preis
+          180: {led: 500, laenge: "11 m", preis: null},    // TODO: Preis
+          210: {led: 750, laenge: "16 m", preis: null},    // TODO: Preis
+          240: {led: null, laenge: null, preis: null},     // TODO: passende Compact-Größe für 240cm im Sortiment prüfen
+        }
+      },
+      cluster: {
+        name: "Lumineo Cluster",
+        bestseller: false,
+        hinweis: "dicke Lichtbündel statt einzelner Linien – sehr intensiver, opulenter Look",
+        kabel: "schwarz",
+        farbe: "warmweiß",
+        optionen: [
+          {led: 588, laenge: "5,5 m", preis: null},   // TODO: Preis
+          {led: 768, laenge: "ca. 7 m", preis: null}, // TODO: Preis, Länge prüfen
+        ]
+      },
+      silberdraht: {
+        name: "Lumineo Silberdraht (Micro Wire)",
+        bestseller: false,
+        hinweis: "sehr feine, filigrane Optik – wirkt wie verstreute kleine Lichtpunkte",
+        kabel: "silber",
+        farbe: "warmweiß",
+        optionen: [
+          {led: 320, laenge: "1 m je Bündel (Bunch Lights, zum Eindrehen)", preis: null}, // TODO: Preis
+          {led: 240, laenge: "12 m (durchgehende Kette)", preis: null},                   // TODO: Preis
+        ]
+      },
+      kerzenoptik: {
+        name: "Lumineo Kerzen-Lichterkette",
+        bestseller: false,
+        hinweis: "klassische Kerzenform zum Anklemmen – nostalgischer Look wie früher",
+        kabel: "grün",
+        farbe: "warmweiß / klassisch warm",
+        optionen: [
+          {led: 20, laenge: "9,5 m", preis: null},                                   // TODO: Preis
+          {led: 30, laenge: "11,6 m, klassisch warm", preis: null},                  // TODO: Preis
+          {led: 10, laenge: "Set Einzelkerzen, batteriebetrieben, mit Fernbedienung, nur Indoor", preis: null}, // TODO: Preis
+        ]
+      }
+    },
+    kugeln: [
+      // { name: "Christbaumkugel-Set 6-8cm", preis: null, hinweis: "" },
+    ],
+    staenderabdeckungen: [
+      // { name: "Jute-Ständerabdeckung natur", preis: null, hinweis: "" },
+    ]
+  },
+
+  // ---- Garantie ----
+  garantie: {
+    gesetzlichJahre: 2,
+    herstellerJahreZusatz: 10,
+    registrierungsfristMonate: 2,
+    registrierungsUrl: "https://www.everlands-trees.com/de/Garantie/garantievoorwaarden/"
+  },
+
+  // ---- Wartung ----
+  // PIN für den versteckten "Seite frisch laden"-Zugang (siehe ganz unten im
+  // Script). Bitte vor dem Livegang auf einen eigenen 4-stelligen Code ändern.
+  wartung: {
+    pin: "2008"
+  }
+};
+
+// ---- FAQ Inhalte ----
+const faqDaten = [
+  {
+    f: "Was ist der Unterschied zwischen PE- und PVC-Nadeln?",
+    a: "PE-Nadeln (Polyethylen) werden aus echten Tannenzweigen abgeformt und wirken sehr naturgetreu, kosten aber mehr. PVC-Nadeln sind fadenförmig, günstiger und wirken etwas voller – ideal für den klassischen Look."
+  },
+  {
+    f: "Wie lagere ich den Baum nach der Saison?",
+    a: "Am besten trocken, staubgeschützt und liegend oder in der Original-Tragetasche. So bleiben Form und Nadeln über viele Jahre erhalten."
+  },
+  {
+    f: "Sind die künstlichen Bäume schwer entflammbar?",
+    a: "Alle Modelle bei uns sind nach DIN EN 71 geprüft und schwer entflammbar – ein wichtiger Unterschied zu Deko-Discountware."
+  },
+  {
+    f: "Wie schnell ist der Baum aufgebaut?",
+    a: "Modelle mit Klapp-Technik stehen in 5–10 Minuten. Steckbäume dauern je nach Höhe 20–30 Minuten, sehen dafür besonders gleichmäßig aus."
+  },
+  {
+    f: "Kann ich die Lichterkette auch drinnen verwenden?",
+    a: "Ja. Die meisten unserer Lichterketten sind für Innen- und Außenbereich geeignet. Ist eine Kette für den Außenbereich zugelassen, funktioniert sie automatisch auch drinnen – umgekehrt gilt das nicht immer."
+  },
+  {
+    f: "Welche Lichtfarbe haben die Lichterketten?",
+    a: "Bei uns sind alle Lichterketten warmweiß."
+  },
+  {
+    f: "Was bedeuten Timer und Dimmer auf der Verpackung?",
+    a: "Steht Timerfunktion oder Dimmer auf dem Karton, ist diese Funktion auch tatsächlich verbaut. Und falls eine Kette blinkt: Das lässt sich bei den meisten Modellen auch auf Dauerlicht ohne Blinken umstellen."
+  }
+];
+
+const faqListe = document.getElementById('faq-liste');
+faqDaten.forEach((item, i) => {
+  const div = document.createElement('div');
+  div.className = 'faq-item';
+  div.innerHTML = `
+    <div class="faq-frage" onclick="this.parentElement.classList.toggle('offen')">
+      <span>${item.f}</span>
+      <span class="faq-plus">+</span>
+    </div>
+    <div class="faq-antwort">${item.a}</div>
+  `;
+  faqListe.appendChild(div);
+});
+
+// ---- Schritt 1: Größe (echte Sortimentsgrößen) ----
+const groessen = [
+  {label: "150 cm", neben: "kompakte Räume, Wohnung", cm: 150},
+  {label: "180 cm", neben: "gängige Zimmerhöhe", cm: 180},
+  {label: "210 cm", neben: "meistverkaufte Größe", cm: 210, bestseller:true},
+  {label: "240 cm", neben: "hohe Räume, Foyer", cm: 240},
+];
+let auswahl = { groesse: null, beschneit: null, schlank: null, nadelPremium: null, optik: null };
+
+const optionenGroesse = document.getElementById('optionen-groesse');
+groessen.forEach(g => {
+  const btn = document.createElement('div');
+  btn.className = 'option';
+  btn.innerHTML = `<div><div class="haupt">${g.label}${g.bestseller ? ' <span class="modell-tag" style="margin-left:6px;">Meistverkauft</span>' : ''}</div><div class="neben">${g.neben}</div></div>`;
+  btn.onclick = () => {
+    auswahl.groesse = g.cm;
+    document.querySelectorAll('#optionen-groesse .option').forEach(o => o.classList.remove('gewaehlt'));
+    btn.classList.add('gewaehlt');
+    document.getElementById('weiter-s1').classList.add('aktiv');
+  };
+  optionenGroesse.appendChild(btn);
+});
+
+// ---- Schritt 1b: Beschneit oder grün ----
+const beschneitOptionen = [
+  {label: "Grün, klassisch", neben: "kein Frost- oder Schnee-Effekt", wert: false},
+  {label: "Beschneite Optik", neben: "mit Frost- oder Schnee-Effekt", wert: true},
+];
+const optionenBeschneit = document.getElementById('optionen-beschneit');
+beschneitOptionen.forEach(b => {
+  const btn = document.createElement('div');
+  btn.className = 'option';
+  btn.innerHTML = `<div><div class="haupt">${b.label}</div><div class="neben">${b.neben}</div></div>`;
+  btn.onclick = () => {
+    auswahl.beschneit = b.wert;
+    document.querySelectorAll('#optionen-beschneit .option').forEach(o => o.classList.remove('gewaehlt'));
+    btn.classList.add('gewaehlt');
+    document.getElementById('weiter-s1b').classList.add('aktiv');
+  };
+  optionenBeschneit.appendChild(btn);
+});
+
+// ---- Schritt 1c: Praxis-Kriterien (Silhouette + Nadelqualität) ----
+const schlankOptionen = [
+  {label: "Schlanke Form", neben: "platzsparend, für Ecken & schmale Räume", wert: true},
+  {label: "Voller Baum", neben: "klassisch üppige Silhouette", wert: false},
+];
+const optionenSchlank = document.getElementById('optionen-schlank');
+schlankOptionen.forEach(s => {
+  const btn = document.createElement('div');
+  btn.className = 'option';
+  btn.innerHTML = `<div><div class="haupt">${s.label}</div><div class="neben">${s.neben}</div></div>`;
+  btn.onclick = () => {
+    auswahl.schlank = s.wert;
+    document.querySelectorAll('#optionen-schlank .option').forEach(o => o.classList.remove('gewaehlt'));
+    btn.classList.add('gewaehlt');
+    pruefeWeiterS1c();
+  };
+  optionenSchlank.appendChild(btn);
+});
+
+const nadelOptionen = [
+  {label: "Premium-Nadel", neben: "hoher PE-Anteil, sehr naturgetreu", wert: true},
+  {label: "Preisgünstige Nadel", neben: "mehr PVC-Anteil, guter Einstieg", wert: false},
+];
+const optionenNadel = document.getElementById('optionen-nadel');
+nadelOptionen.forEach(n => {
+  const btn = document.createElement('div');
+  btn.className = 'option';
+  btn.innerHTML = `<div><div class="haupt">${n.label}</div><div class="neben">${n.neben}</div></div>`;
+  btn.onclick = () => {
+    auswahl.nadelPremium = n.wert;
+    document.querySelectorAll('#optionen-nadel .option').forEach(o => o.classList.remove('gewaehlt'));
+    btn.classList.add('gewaehlt');
+    pruefeWeiterS1c();
+  };
+  optionenNadel.appendChild(btn);
+});
+
+function pruefeWeiterS1c(){
+  const fertig = auswahl.schlank !== null && auswahl.nadelPremium !== null;
+  document.getElementById('weiter-s1c').classList.toggle('aktiv', fertig);
+}
+
+// ---- Schritt 2: Modellwahl ----
+// Beschreibungstexte je Modell (Herstellerangaben Kaemingk/Everlands).
+const modellBeschreibung = {
+  grandis:    "sehr dicht & naturgetreu",
+  allison:    "natürliche Kiefer-Optik",
+  killington: "schlank, beschneit",
+  alba:       "beschneit, voller Look",
+  galloway:   "schlanke Fichten-Optik",
+  kenmore:    "voller Look, preisgünstiger Einstieg",
+};
+const optionenOptik = document.getElementById('optionen-optik');
+
+// Wird aufgerufen, sobald alle vorherigen Schritte feststehen: zeigt nur die
+// Modelle, die zu Größe, Beschneit-Wahl, Silhouette UND Nadelqualität passen.
+// Ist ein Attribut bei einem Modell nicht dokumentiert (null), filtert es
+// nicht heraus, statt fälschlich einen Wert zu unterstellen.
+function renderOptikOptionen(){
+  optionenOptik.innerHTML = '';
+  auswahl.optik = null;
+  document.getElementById('weiter-s2').classList.remove('aktiv');
+  Object.keys(modelle).forEach(key => {
+    const modell = modelle[key];
+    if(!modell.varianten[auswahl.groesse]) return;
+    if(modell.beschneit !== auswahl.beschneit) return;
+    if(auswahl.schlank !== null && modell.schlank !== null && modell.schlank !== auswahl.schlank) return;
+    if(auswahl.nadelPremium !== null && modell.nadelPremium !== null && modell.nadelPremium !== auswahl.nadelPremium) return;
+    const btn = document.createElement('div');
+    btn.className = 'option';
+    btn.innerHTML = `<div><div class="haupt">${modell.name}</div><div class="neben">${modellBeschreibung[key] || ''}</div></div>`;
+    btn.onclick = () => {
+      auswahl.optik = key;
+      document.querySelectorAll('#optionen-optik .option').forEach(el => el.classList.remove('gewaehlt'));
+      btn.classList.add('gewaehlt');
+      document.getElementById('weiter-s2').classList.add('aktiv');
+    };
+    optionenOptik.appendChild(btn);
+  });
+  if(!optionenOptik.children.length){
+    optionenOptik.innerHTML = `
+      <div class="neben" style="margin-bottom:10px;">Diese genaue Kombination führen wir leider nicht. Zwei nahe Alternativen:</div>
+    `;
+    const alt1 = document.createElement('div');
+    alt1.className = 'option';
+    alt1.innerHTML = `<div><div class="haupt">Schlank bleiben, andere Nadel</div><div class="neben">zeigt schlanke Modelle unabhängig von der Nadelqualität</div></div>`;
+    alt1.onclick = () => { auswahl.nadelPremium = null; renderOptikOptionen(); };
+    optionenOptik.appendChild(alt1);
+
+    const alt2 = document.createElement('div');
+    alt2.className = 'option';
+    alt2.innerHTML = `<div><div class="haupt">Premium-Nadel bleiben, voller Baum</div><div class="neben">zeigt Premium-Modelle unabhängig von der Silhouette</div></div>`;
+    alt2.onclick = () => { auswahl.schlank = null; renderOptikOptionen(); };
+    optionenOptik.appendChild(alt2);
+  }
+}
+
+// ---- Modelle: aus KONFIGURATION (Kaemingk/Everlands), Preise folgen ----
+const modelle = KONFIGURATION.modelle;
+
+function zeigeErgebnis(){
+  if(!auswahl.groesse || !auswahl.optik) return;
+  const modell = modelle[auswahl.optik];
+  const variante = modell.varianten[auswahl.groesse];
+  const liste = document.getElementById('modelle-liste');
+
+  const details = [];
+  if(variante.zweige) details.push(`${variante.zweige} Zweige`);
+  if(variante.durchmesser) details.push(`Kronen-Ø ${variante.durchmesser}`);
+  const detailZeile = details.length ? details.join(' · ') : 'Details folgen';
+  const preisZeile = variante.preis ? `<div class="modell-preis">${variante.preis} €</div>` : '';
+
+  liste.innerHTML = `
+    <div class="modell-karte empfehlung">
+      <svg class="modell-bild" viewBox="0 0 80 96" fill="none">
+        <path d="M40 6 L54 34 H46 L60 58 H50 L64 84 H16 L30 58 H20 L34 34 H26 Z" stroke="#1E4B2C" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+        <rect x="37" y="84" width="6" height="7" rx="1" stroke="#1E4B2C" stroke-width="4"/>
+        <circle cx="40" cy="6" r="3.5" fill="#1E4B2C"/>
+      </svg>
+      <div>
+        <div class="modell-tag">${modell.tag}</div>
+        <div class="modell-name">${modell.name} · ${auswahl.groesse} cm</div>
+        <div class="modell-detail">${detailZeile}</div>
+        ${preisZeile}
+      </div>
+    </div>
+  `;
+
+  // Faustregel-Rechner für Licht & Schmuck (Erfahrungswert pro 30 cm Höhe)
+  const lichter = Math.round((auswahl.groesse / 30) * 100);
+  const kugelnMin = Math.round((auswahl.groesse / 30) * 8);
+  const kugelnMax = Math.round((auswahl.groesse / 30) * 12);
+
+  document.getElementById('bedarf-lichter').textContent = `ca. ${lichter} Lichter`;
+  document.getElementById('bedarf-kugeln').textContent = `${kugelnMin}–${kugelnMax} Stück`;
+
+  zeigeLichtEmpfehlung();
+  zeige('screen-ergebnis');
+}
+
+// Zweite Empfehlung nach dem Baum: kurze Stil-Abfrage, die direkt zum
+// passenden Lichterketten-Produkt führt. Bei "Compact" wird automatisch
+// die zur Baumgröße passende Variante gezogen.
+function zeigeLichtEmpfehlung(){
+  const box = document.getElementById('licht-empfehlung');
+  box.innerHTML = `
+    <div class="licht-titel">Welcher Licht-Look?</div>
+    <div class="optionen" id="licht-stile" style="margin-bottom:8px;"></div>
+    <div id="licht-ergebnis" class="licht-alt-zeile" style="display:none;"></div>
+  `;
+  const stile = [
+    {key: 'compact',     label: 'Dicht & gleichmäßig'},
+    {key: 'cluster',     label: 'Intensiv & massiv'},
+    {key: 'silberdraht', label: 'Fein & filigran'},
+    {key: 'kerzenoptik', label: 'Klassisch nostalgisch'},
+  ];
+  const stilBox = document.getElementById('licht-stile');
+  stile.forEach(s => {
+    const btn = document.createElement('div');
+    btn.className = 'option option-klein';
+    btn.innerHTML = `<div class="option-bild">${lichtIcon(s.key)}<div class="haupt">${s.label}</div></div>`;
+    btn.onclick = () => {
+      document.querySelectorAll('#licht-stile .option').forEach(o => o.classList.remove('gewaehlt'));
+      btn.classList.add('gewaehlt');
+      zeigeLichtProdukt(s.key);
+    };
+    stilBox.appendChild(btn);
+  });
+}
+
+// Kleine, selbst gezeichnete Strich-Icons je Lichterketten-Stil – im gleichen
+// Look wie das Baum-Icon (Tannengrün-Kontur), damit nichts von externen
+// Servern nachgeladen werden muss.
+function lichtIcon(key){
+  const s = 'stroke="#1E4B2C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+  const p = 'fill="#8C9B3E"';
+  if(key === 'compact'){
+    return `<svg viewBox="0 0 40 40"><path d="M4 20 H36" ${s}/>
+      <circle cx="8" cy="20" r="2.4" ${p}/><circle cx="16" cy="20" r="2.4" ${p}/>
+      <circle cx="24" cy="20" r="2.4" ${p}/><circle cx="32" cy="20" r="2.4" ${p}/></svg>`;
+  }
+  if(key === 'cluster'){
+    return `<svg viewBox="0 0 40 40"><path d="M20 36 C14 28 10 22 6 8" ${s}/>
+      <path d="M20 36 C22 26 24 18 20 4" ${s}/>
+      <path d="M20 36 C26 28 30 20 34 8" ${s}/>
+      <circle cx="8" cy="12" r="2.2" ${p}/><circle cx="21" cy="8" r="2.2" ${p}/>
+      <circle cx="32" cy="12" r="2.2" ${p}/><circle cx="16" cy="22" r="2.2" ${p}/>
+      <circle cx="25" cy="22" r="2.2" ${p}/></svg>`;
+  }
+  if(key === 'silberdraht'){
+    return `<svg viewBox="0 0 40 40"><path d="M5 32 C14 30 10 18 20 20 C30 22 26 8 35 6" ${s}/>
+      <circle cx="10" cy="30" r="1.8" ${p}/><circle cx="20" cy="20" r="1.8" ${p}/>
+      <circle cx="30" cy="10" r="1.8" ${p}/></svg>`;
+  }
+  // kerzenoptik
+  return `<svg viewBox="0 0 40 40"><path d="M18 34 L18 14" ${s}/>
+    <path d="M14 34 H22" ${s}/>
+    <path d="M18 14 C15 10 15 7 18 4 C21 7 21 10 18 14 Z" ${p} stroke="#1E4B2C" stroke-width="1.6"/></svg>`;
+}
+
+function zeigeLichtProdukt(key){
+  const lk = KONFIGURATION.zubehoer.lichterketten;
+  const modell = lk[key];
+  const ergebnis = document.getElementById('licht-ergebnis');
+  let zeile;
+  if(key === 'compact'){
+    const v = modell.varianten[auswahl.groesse];
+    zeile = (v && v.led)
+      ? `${modell.name} · ${v.led} LED (${v.laenge})`
+      : `${modell.name} · passende Größe für ${auswahl.groesse} cm bitte im Sortiment prüfen`;
+  } else {
+    zeile = `${modell.name} · ${modell.optionen.map(o => `${o.led} LED (${o.laenge})`).join(' oder ')}`;
+  }
+  ergebnis.innerHTML = `
+    <div class="licht-ergebnis-inhalt">
+      ${lichtIcon(key)}
+      <div><strong>${zeile}</strong><br>${modell.hinweis}</div>
+    </div>
+  `;
+  ergebnis.style.display = 'block';
+}
+
+</script>
+
+</body>
+</html>
