@@ -154,7 +154,8 @@
     color: var(--tanne);
     border: 1.5px solid var(--tanne);
   }
-  .btn-primary:active, .btn-secondary:active{ transform: scale(0.98); }
+  .btn-oliv{ background: var(--oliv); color: var(--weiss); }
+  .btn-primary:active, .btn-secondary:active, .btn-oliv:active{ transform: scale(0.98); }
   .btn-sub{
     display:block;
     font-weight:400;
@@ -622,6 +623,10 @@
           <span>Baum-Berater starten<span class="btn-sub">Größe, Modell, Empfehlung</span></span>
           <span class="arrow">→</span>
         </button>
+        <button class="btn-primary btn-oliv" onclick="zeige('screen-bestand-groesse')">
+          <span>Ich habe schon einen Baum<span class="btn-sub">Passende Lichterkette & Schmuckmenge</span></span>
+          <span class="arrow">→</span>
+        </button>
         <button class="btn-secondary" onclick="zeige('screen-faq')">
           <span>Häufige Fragen<span class="btn-sub">PE, PVC, Lagerung & mehr</span></span>
           <span class="arrow">→</span>
@@ -808,6 +813,39 @@
     <button class="abschluss-btn" onclick="zurueckZurStart()">↺ Neue Beratung starten</button>
   </div>
 
+  <!-- BESTANDSBAUM: Größe -->
+  <div class="screen" id="screen-bestand-groesse">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-start')">←</button>
+      <div class="kopf-titel">Lichter & Schmuck</div>
+    </div>
+    <div class="frage">Wie groß ist euer Baum?</div>
+    <div class="optionen" id="optionen-bestand-groesse"></div>
+    <div class="weiter-leiste">
+      <button class="btn-weiter" id="weiter-bestand" onclick="zeigeBestandErgebnis()">Bedarf anzeigen</button>
+    </div>
+  </div>
+
+  <!-- BESTANDSBAUM: Ergebnis -->
+  <div class="screen" id="screen-bestand-ergebnis">
+    <div class="kopf">
+      <button class="zurueck" onclick="zeige('screen-bestand-groesse')">←</button>
+      <div class="kopf-titel">Euer Bedarf</div>
+    </div>
+    <div class="bedarf-box">
+      <div class="bedarf-zeile">
+        <span class="bedarf-label">Lichterkette empfohlen</span>
+        <span class="bedarf-wert" id="bedarf-lichter-2">–</span>
+      </div>
+      <div class="bedarf-zeile">
+        <span class="bedarf-label">Christbaumkugeln (Ø 6–8 cm)</span>
+        <span class="bedarf-wert" id="bedarf-kugeln-2">–</span>
+      </div>
+    </div>
+    <div id="licht-empfehlung-2"></div>
+    <button class="abschluss-btn" onclick="zurueckZurStart()">↺ Neue Beratung starten</button>
+  </div>
+
   <!-- WARTUNG: verstecktes PIN-Overlay, nur über 5x Tippen auf die Statuszeile erreichbar -->
   <div class="wartung-overlay" id="wartung-overlay">
     <div class="wartung-karte">
@@ -841,6 +879,7 @@ function zurueckZurStart(){
   auswahl.schlank = null;
   auswahl.nadelPremium = null;
   auswahl.optik = null;
+  bestandGroesse = null;
   document.querySelectorAll('.option.gewaehlt').forEach(o => o.classList.remove('gewaehlt'));
   document.querySelectorAll('.btn-weiter.aktiv').forEach(b => {
     if(b.id !== 'weiter-s1b') b.classList.remove('aktiv'); // weiter-s1b wird beim Rendern neu geprüft
@@ -849,6 +888,7 @@ function zurueckZurStart(){
   document.getElementById('weiter-s1b').classList.remove('aktiv');
   document.getElementById('weiter-s1c').classList.remove('aktiv');
   document.getElementById('weiter-s2').classList.remove('aktiv');
+  document.getElementById('weiter-bestand').classList.remove('aktiv');
   zeige('screen-start');
 }
 
@@ -1205,6 +1245,22 @@ groessen.forEach(g => {
   optionenGroesse.appendChild(btn);
 });
 
+// ---- Bestandsbaum: Größe (eigener, unabhängiger Zustand von "auswahl") ----
+let bestandGroesse = null;
+const optionenBestandGroesse = document.getElementById('optionen-bestand-groesse');
+groessen.forEach(g => {
+  const btn = document.createElement('div');
+  btn.className = 'option';
+  btn.innerHTML = `<div><div class="haupt">${g.label}${g.bestseller ? ' <span class="modell-tag" style="margin-left:6px;">Meistverkauft</span>' : ''}</div><div class="neben">${g.neben}</div></div>`;
+  btn.onclick = () => {
+    bestandGroesse = g.cm;
+    document.querySelectorAll('#optionen-bestand-groesse .option').forEach(o => o.classList.remove('gewaehlt'));
+    btn.classList.add('gewaehlt');
+    document.getElementById('weiter-bestand').classList.add('aktiv');
+  };
+  optionenBestandGroesse.appendChild(btn);
+});
+
 // ---- Schritt 1b: Beschneit oder grün ----
 const beschneitOptionen = [
   {label: "Grün, klassisch", neben: "kein Frost- oder Schnee-Effekt", wert: false},
@@ -1360,19 +1416,40 @@ function zeigeErgebnis(){
   document.getElementById('bedarf-lichter').textContent = `ca. ${lichter} Lichter`;
   document.getElementById('bedarf-kugeln').textContent = `${kugelnMin}–${kugelnMax} Stück`;
 
-  zeigeLichtEmpfehlung();
+  zeigeLichtEmpfehlung('licht-empfehlung', auswahl.groesse);
   zeige('screen-ergebnis');
+}
+
+// Eigenständiger Einstieg für Kunden, die schon einen Baum haben und nur
+// Lichterketten- bzw. Schmuckmenge wissen wollen – überspringt Modellwahl
+// komplett und nutzt dieselbe Faustregel wie zeigeErgebnis().
+function zeigeBestandErgebnis(){
+  if(!bestandGroesse) return;
+  const lichter = Math.round((bestandGroesse / 30) * 100);
+  const kugelnMin = Math.round((bestandGroesse / 30) * 8);
+  const kugelnMax = Math.round((bestandGroesse / 30) * 12);
+
+  document.getElementById('bedarf-lichter-2').textContent = `ca. ${lichter} Lichter`;
+  document.getElementById('bedarf-kugeln-2').textContent = `${kugelnMin}–${kugelnMax} Stück`;
+
+  zeigeLichtEmpfehlung('licht-empfehlung-2', bestandGroesse, '-2');
+  zeige('screen-bestand-ergebnis');
 }
 
 // Zweite Empfehlung nach dem Baum: kurze Stil-Abfrage, die direkt zum
 // passenden Lichterketten-Produkt führt. Bei "Compact" wird automatisch
-// die zur Baumgröße passende Variante gezogen.
-function zeigeLichtEmpfehlung(){
-  const box = document.getElementById('licht-empfehlung');
+// die zur Baumgröße passende Variante gezogen. `boxId` und `suffix`
+// erlauben die Wiederverwendung auf der Bestandsbaum-Ergebnisseite, ohne
+// mit den Element-IDs des Baum-Berater-Ergebnisses zu kollidieren.
+function zeigeLichtEmpfehlung(boxId, groesse, suffix){
+  suffix = suffix || '';
+  const stileId = `licht-stile${suffix}`;
+  const ergebnisId = `licht-ergebnis${suffix}`;
+  const box = document.getElementById(boxId);
   box.innerHTML = `
     <div class="licht-titel">Welcher Licht-Look?</div>
-    <div class="optionen" id="licht-stile" style="margin-bottom:8px;"></div>
-    <div id="licht-ergebnis" class="licht-alt-zeile" style="display:none;"></div>
+    <div class="optionen" id="${stileId}" style="margin-bottom:8px;"></div>
+    <div id="${ergebnisId}" class="licht-alt-zeile" style="display:none;"></div>
   `;
   const stile = [
     {key: 'compact',     label: 'Dicht & gleichmäßig'},
@@ -1380,15 +1457,15 @@ function zeigeLichtEmpfehlung(){
     {key: 'silberdraht', label: 'Fein & filigran'},
     {key: 'kerzenoptik', label: 'Klassisch nostalgisch'},
   ];
-  const stilBox = document.getElementById('licht-stile');
+  const stilBox = document.getElementById(stileId);
   stile.forEach(s => {
     const btn = document.createElement('div');
     btn.className = 'option option-klein';
     btn.innerHTML = `<div class="option-bild">${lichtIcon(s.key)}<div class="haupt">${s.label}</div></div>`;
     btn.onclick = () => {
-      document.querySelectorAll('#licht-stile .option').forEach(o => o.classList.remove('gewaehlt'));
+      stilBox.querySelectorAll('.option').forEach(o => o.classList.remove('gewaehlt'));
       btn.classList.add('gewaehlt');
-      zeigeLichtProdukt(s.key);
+      zeigeLichtProdukt(s.key, ergebnisId, groesse);
     };
     stilBox.appendChild(btn);
   });
@@ -1424,16 +1501,16 @@ function lichtIcon(key){
     <path d="M18 14 C15 10 15 7 18 4 C21 7 21 10 18 14 Z" ${p} stroke="#1E4B2C" stroke-width="1.6"/></svg>`;
 }
 
-function zeigeLichtProdukt(key){
+function zeigeLichtProdukt(key, ergebnisId, groesse){
   const lk = KONFIGURATION.zubehoer.lichterketten;
   const modell = lk[key];
-  const ergebnis = document.getElementById('licht-ergebnis');
+  const ergebnis = document.getElementById(ergebnisId);
   let zeile;
   if(key === 'compact'){
-    const v = modell.varianten[auswahl.groesse];
+    const v = modell.varianten[groesse];
     zeile = (v && v.led)
       ? `${modell.name} · ${v.led} LED (${v.laenge})`
-      : `${modell.name} · passende Größe für ${auswahl.groesse} cm bitte im Sortiment prüfen`;
+      : `${modell.name} · passende Größe für ${groesse} cm bitte im Sortiment prüfen`;
   } else {
     zeile = `${modell.name} · ${modell.optionen.map(o => `${o.led} LED (${o.laenge})`).join(' oder ')}`;
   }
