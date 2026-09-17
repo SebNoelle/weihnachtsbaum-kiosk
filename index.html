@@ -551,7 +551,12 @@
     font-weight:700;
     font-size:21px;
     color: var(--tanne);
-    margin-bottom:24px;
+    margin-bottom:10px;
+  }
+  .wartung-zaehler{
+    font-size:15px;
+    color: var(--rinde);
+    margin-bottom:22px;
   }
   .wartung-punkte{
     display:flex;
@@ -868,6 +873,7 @@
   <div class="wartung-overlay" id="wartung-overlay">
     <div class="wartung-karte">
       <div class="wartung-titel">Seite neu laden</div>
+      <div class="wartung-zaehler" id="wartung-zaehler">Baum-Berater genutzt: – ×</div>
       <div class="wartung-punkte" id="wartung-punkte">
         <span></span><span></span><span></span><span></span>
       </div>
@@ -962,6 +968,8 @@ document.getElementById('wartungs-trigger').addEventListener('click', () => {
 function wartungOeffnen(){
   wartungEingabe = '';
   wartungPunkteAktualisieren();
+  const nutzungen = parseInt(localStorage.getItem('baumberater_nutzungen') || '0', 10);
+  document.getElementById('wartung-zaehler').textContent = `Baum-Berater genutzt: ${nutzungen}×`;
   const tasten = document.getElementById('wartung-tasten');
   tasten.innerHTML = '';
   ['1','2','3','4','5','6','7','8','9','⌫','0','OK'].forEach(t => {
@@ -1414,6 +1422,8 @@ const modelle = KONFIGURATION.modelle;
 
 function zeigeErgebnis(){
   if(!auswahl.groesse || !auswahl.optik) return;
+  const nutzungenBisher = parseInt(localStorage.getItem('baumberater_nutzungen') || '0', 10);
+  localStorage.setItem('baumberater_nutzungen', String(nutzungenBisher + 1));
   const modell = modelle[auswahl.optik];
   const variante = modell.varianten[auswahl.groesse];
   const liste = document.getElementById('modelle-liste');
