@@ -193,6 +193,24 @@
     justify-content:center;
     flex-shrink:0;
   }
+  /* Permanenter "Alles zurücksetzen"-Button, wird per JS in jede .kopf-Zeile
+     eingefügt (also auf jeder Unterseite außer der Startseite selbst). */
+  .kopf-reset{
+    width:54px; height:54px;
+    border-radius:50%;
+    border:1.5px solid var(--tanne);
+    background: var(--weiss);
+    color: var(--tanne);
+    font-size:26px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    margin-left:auto;
+  }
+  .kopf-reset:active{ background: rgba(140,155,62,0.16); }
   .kopf-titel{
     font-family:'Poppins', sans-serif;
     font-size: 28px;
@@ -891,6 +909,20 @@ function zurueckZurStart(){
   document.getElementById('weiter-bestand').classList.remove('aktiv');
   zeige('screen-start');
 }
+
+// ---- Permanenter Reset-Button in jeder Kopfzeile ----
+// Jede Unterseite außer der Startseite hat eine .kopf-Zeile mit dem
+// Zurück-Pfeil. Hier wird ihr überall automatisch ein zweiter Button
+// hinzugefügt, der sofort zur Startseite springt und alle Auswahlen
+// verwirft – ohne dass jede Bildschirm-Vorlage das einzeln definieren muss.
+document.querySelectorAll('.kopf').forEach(kopf => {
+  const btn = document.createElement('button');
+  btn.className = 'kopf-reset';
+  btn.setAttribute('aria-label', 'Alles zurücksetzen und zur Startseite');
+  btn.textContent = '↺';
+  btn.onclick = zurueckZurStart;
+  kopf.appendChild(btn);
+});
 
 // ---- 30-Sekunden-Inaktivitäts-Timer ----
 // Macht ohne Eingabe keinen Unterschied auf der Startseite selbst, springt
