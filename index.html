@@ -1064,9 +1064,10 @@ const KONFIGURATION = {
       schlank: false,
       nadelPremium: true,   // Flaggschiff-Linie, hoher Anteil Real-Needle-PE (genauer Zweigspitzen-Mix nicht online dokumentiert)
       varianten: {
-        180: {zweige: null, durchmesser: "132 cm", preis: null},   // TODO: Zweige, Preis
-        210: {zweige: null, durchmesser: "150 cm", preis: null},   // TODO: Zweige, Preis
-        240: {zweige: null, durchmesser: "162 cm", preis: null},   // TODO: Zweige, Preis
+        150: {zweige: null, durchmesser: null, preis: 79},        // TODO: Zweige, Durchmesser (neue Größe laut Preisschild, noch nicht dokumentiert)
+        180: {zweige: null, durchmesser: "132 cm", preis: 99},    // TODO: Zweige
+        210: {zweige: null, durchmesser: "150 cm", preis: 149},   // TODO: Zweige
+        240: {zweige: null, durchmesser: "162 cm", preis: 199},   // TODO: Zweige
       }
     },
     allison: {
@@ -1077,9 +1078,9 @@ const KONFIGURATION = {
       schlank: false,
       nadelPremium: true,   // bestätigt: 675 PE / 559 PVC Spitzen bei 180cm = ca. 55% PE
       varianten: {
-        150: {zweige: null, durchmesser: "97 cm", preis: null},    // TODO: Zweige, Preis
-        180: {zweige: 38, durchmesser: "112 cm", preis: null},     // TODO: Preis
-        210: {zweige: 54, durchmesser: "127 cm", preis: null},     // TODO: Preis
+        150: {zweige: null, durchmesser: "97 cm", preis: 79.99},    // TODO: Zweige
+        180: {zweige: 38, durchmesser: "112 cm", preis: 99.99},
+        210: {zweige: 54, durchmesser: "127 cm", preis: 139.99},
       }
     },
     killington: {
@@ -1090,10 +1091,10 @@ const KONFIGURATION = {
       schlank: true,        // Hersteller beschreibt Killington Fir explizit als "slim profile"
       nadelPremium: false,  // bestätigt: 385 PE / 753 PVC Spitzen bei 210cm = ca. 34% PE, PVC-lastiger Mix
       varianten: {
-        150: {zweige: null, durchmesser: "83 cm", preis: null},    // TODO: Zweige, Preis
-        180: {zweige: null, durchmesser: "93 cm", preis: null},    // TODO: Zweige, Preis
-        210: {zweige: 52, durchmesser: "103 cm", preis: null},     // TODO: Preis
-        240: {zweige: null, durchmesser: "113 cm", preis: null},   // TODO: Zweige, Preis
+        150: {zweige: null, durchmesser: "83 cm", preis: 79},     // TODO: Zweige
+        180: {zweige: null, durchmesser: "93 cm", preis: 99},     // TODO: Zweige
+        210: {zweige: 52, durchmesser: "103 cm", preis: 129},
+        240: {zweige: null, durchmesser: "113 cm", preis: 159},   // TODO: Zweige
       }
     },
     alba: {
@@ -1104,9 +1105,10 @@ const KONFIGURATION = {
       schlank: false,
       nadelPremium: true,   // bestätigt: ca. 1125 PE / 820 PVC Spitzen bei 210cm = ca. 58% PE
       varianten: {
-        150: {zweige: null, durchmesser: "102 cm", preis: null},   // TODO: Zweige, Preis
-        180: {zweige: null, durchmesser: "116 cm", preis: null},   // TODO: Zweige, Preis
-        210: {zweige: 56, durchmesser: "127 cm", preis: null},     // TODO: Preis
+        150: {zweige: null, durchmesser: "102 cm", preis: 119},   // TODO: Zweige
+        180: {zweige: null, durchmesser: "116 cm", preis: 149},   // TODO: Zweige
+        210: {zweige: 56, durchmesser: "127 cm", preis: 179},
+        240: {zweige: null, durchmesser: null, preis: 229},       // TODO: Zweige, Durchmesser (neue Größe laut Preisschild, noch nicht dokumentiert)
       }
     },
     galloway: {
@@ -1117,10 +1119,10 @@ const KONFIGURATION = {
       schlank: true,         // Hersteller beschreibt Galloway Spruce als "etwas schlanker als die meisten"
       nadelPremium: false,   // laut Rückmeldung gibt es "schlank + Premium" im Sortiment nicht
       varianten: {
-        150: {zweige: null, durchmesser: "106 cm", preis: null},   // TODO: Zweige, Preis (Durchmesser laut Foto teils unscharf – bitte prüfen)
-        180: {zweige: null, durchmesser: "120 cm", preis: null},   // TODO: Zweige, Preis
-        210: {zweige: null, durchmesser: "130 cm", preis: null},   // TODO: Zweige, Preis
-        240: {zweige: null, durchmesser: "150 cm", preis: null},   // TODO: Zweige, Preis
+        150: {zweige: null, durchmesser: "106 cm", preis: 89},    // TODO: Zweige (Durchmesser laut Foto teils unscharf – bitte prüfen)
+        180: {zweige: null, durchmesser: "120 cm", preis: 129},   // TODO: Zweige
+        210: {zweige: null, durchmesser: "130 cm", preis: 149},   // TODO: Zweige
+        240: {zweige: null, durchmesser: "150 cm", preis: 199},   // TODO: Zweige
       }
     },
     kenmore: {
@@ -1131,9 +1133,10 @@ const KONFIGURATION = {
       schlank: false,        // voller Baum, laut Wunsch als Einstiegsmodell für "voll + preisgünstig" ergänzt
       nadelPremium: false,
       varianten: {
-        150: {zweige: 24, durchmesser: "81 cm", preis: null},      // TODO: Preis
-        180: {zweige: 38, durchmesser: "96 cm", preis: null},      // TODO: Preis
-        210: {zweige: 52, durchmesser: "120 cm", preis: null},     // TODO: Preis
+        150: {zweige: 24, durchmesser: "81 cm", preis: 99.99},
+        180: {zweige: 38, durchmesser: "96 cm", preis: 139.99},
+        210: {zweige: 52, durchmesser: "120 cm", preis: 189.99},
+        240: {zweige: null, durchmesser: null, preis: 279.99},    // TODO: Zweige, Durchmesser (neue Größe laut Preisschild, noch nicht dokumentiert)
       }
     }
   },
