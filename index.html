@@ -1064,10 +1064,10 @@ const KONFIGURATION = {
       schlank: false,
       nadelPremium: true,   // Flaggschiff-Linie, hoher Anteil Real-Needle-PE (genauer Zweigspitzen-Mix nicht online dokumentiert)
       varianten: {
-        150: {zweige: null, durchmesser: null, preis: 79},        // TODO: Zweige, Durchmesser (neue Größe laut Preisschild, noch nicht dokumentiert)
-        180: {zweige: null, durchmesser: "132 cm", preis: 99},    // TODO: Zweige
-        210: {zweige: null, durchmesser: "150 cm", preis: 149},   // TODO: Zweige
-        240: {zweige: null, durchmesser: "162 cm", preis: 199},   // TODO: Zweige
+        150: {zweige: null, durchmesser: null, preis: 79},        // TODO: Zweige, Durchmesser (für Everlands Grandis Fir nirgends in 150cm gelistet gefunden – evtl. Sondergröße)
+        180: {zweige: 56, durchmesser: "132 cm", preis: 99},      // Zweige laut einer Händlerquelle, nur einfach bestätigt
+        210: {zweige: 80, durchmesser: "150 cm", preis: 149},     // Zweige über mehrere Händler übereinstimmend bestätigt
+        240: {zweige: 98, durchmesser: "162 cm", preis: 199},     // Zweige + Durchmesser aus derselben Quelle bestätigt
       }
     },
     allison: {
@@ -1078,7 +1078,7 @@ const KONFIGURATION = {
       schlank: false,
       nadelPremium: true,   // bestätigt: 675 PE / 559 PVC Spitzen bei 180cm = ca. 55% PE
       varianten: {
-        150: {zweige: null, durchmesser: "97 cm", preis: 79.99},    // TODO: Zweige
+        150: {zweige: 24, durchmesser: "97 cm", preis: 79.99},      // Zweige per Händlerquelle bestätigt
         180: {zweige: 38, durchmesser: "112 cm", preis: 99.99},
         210: {zweige: 54, durchmesser: "127 cm", preis: 139.99},
       }
@@ -1091,10 +1091,10 @@ const KONFIGURATION = {
       schlank: true,        // Hersteller beschreibt Killington Fir explizit als "slim profile"
       nadelPremium: false,  // bestätigt: 385 PE / 753 PVC Spitzen bei 210cm = ca. 34% PE, PVC-lastiger Mix
       varianten: {
-        150: {zweige: null, durchmesser: "83 cm", preis: 79},     // TODO: Zweige
-        180: {zweige: null, durchmesser: "93 cm", preis: 99},     // TODO: Zweige
+        150: {zweige: 24, durchmesser: "83 cm", preis: 79},       // Zweige + Durchmesser exakt bestätigt (Händlerquelle)
+        180: {zweige: 38, durchmesser: "93 cm", preis: 99},       // Zweige per Händlerquelle bestätigt
         210: {zweige: 52, durchmesser: "103 cm", preis: 129},
-        240: {zweige: null, durchmesser: "113 cm", preis: 159},   // TODO: Zweige
+        240: {zweige: 68, durchmesser: "113 cm", preis: 159},     // Zweige per Händlerquelle bestätigt
       }
     },
     alba: {
@@ -1108,7 +1108,7 @@ const KONFIGURATION = {
         150: {zweige: null, durchmesser: "102 cm", preis: 119},   // TODO: Zweige
         180: {zweige: null, durchmesser: "116 cm", preis: 149},   // TODO: Zweige
         210: {zweige: 56, durchmesser: "127 cm", preis: 179},
-        240: {zweige: null, durchmesser: null, preis: 229},       // TODO: Zweige, Durchmesser (neue Größe laut Preisschild, noch nicht dokumentiert)
+        240: {zweige: null, durchmesser: null, preis: 229},       // TODO: Zweige, Durchmesser (im Netz keine Quelle für "Snowy Alba Fir" 240cm gefunden – nur ein anderes Everlands-Modell mit abweichenden Maßen als Näherung, nicht übernommen)
       }
     },
     galloway: {
@@ -1121,7 +1121,7 @@ const KONFIGURATION = {
       varianten: {
         150: {zweige: null, durchmesser: "106 cm", preis: 89},    // TODO: Zweige (Durchmesser laut Foto teils unscharf – bitte prüfen)
         180: {zweige: null, durchmesser: "120 cm", preis: 129},   // TODO: Zweige
-        210: {zweige: null, durchmesser: "130 cm", preis: 149},   // TODO: Zweige
+        210: {zweige: 65, durchmesser: "130 cm", preis: 149},     // Zweige + Durchmesser bestätigt (Händlerquelle)
         240: {zweige: null, durchmesser: "150 cm", preis: 199},   // TODO: Zweige
       }
     },
@@ -1136,7 +1136,7 @@ const KONFIGURATION = {
         150: {zweige: 24, durchmesser: "81 cm", preis: 99.99},
         180: {zweige: 38, durchmesser: "96 cm", preis: 139.99},
         210: {zweige: 52, durchmesser: "120 cm", preis: 189.99},
-        240: {zweige: null, durchmesser: null, preis: 279.99},    // TODO: Zweige, Durchmesser (neue Größe laut Preisschild, noch nicht dokumentiert)
+        240: {zweige: null, durchmesser: null, preis: 279.99},    // TODO: Zweige, Durchmesser ("Kenmore Fir" unter diesem Namen online bei keinem Händler als Kaemingk/Everlands-Modell gefunden – evtl. interner/abweichender Produktname, bitte beim Lieferanten nachfragen)
       }
     }
   },
